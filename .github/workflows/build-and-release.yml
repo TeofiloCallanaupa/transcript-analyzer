@@ -38,10 +38,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-13
-            artifact-name: TranscriptAnalyzer-macOS-Intel
           - os: macos-latest
-            artifact-name: TranscriptAnalyzer-macOS-AppleSilicon
+            artifact-name: TranscriptAnalyzer-macOS
           - os: windows-latest
             artifact-name: TranscriptAnalyzer-Windows
     runs-on: ${{ matrix.os }}
@@ -101,9 +99,10 @@ jobs:
 
             | Platform | File | Notes |
             |----------|------|-------|
-            | 🍎 macOS (Apple Silicon) | `TranscriptAnalyzer-macOS-AppleSilicon.zip` | M1/M2/M3/M4 Macs |
-            | 🍎 macOS (Intel) | `TranscriptAnalyzer-macOS-Intel.zip` | Older Intel Macs |
+            | 🍎 macOS | `TranscriptAnalyzer-macOS.zip` | Apple Silicon (M1/M2/M3/M4) |
             | 🪟 Windows | `TranscriptAnalyzer-Windows.zip` | Windows 10/11 |
+
+            > **Intel Mac users:** Run from source — see the [README](README.md#option-2-run-from-source).
 
             **First time on macOS?** Right-click the app → Open (see [User Guide](USER_GUIDE.md))
 

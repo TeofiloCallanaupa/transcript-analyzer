@@ -41,9 +41,10 @@ A desktop application for converting interview transcripts from DOCX to CSV and 
 
 | Platform | File | Compatible with |
 |----------|------|-----------------|
-| 🍎 macOS (Apple Silicon) | `TranscriptAnalyzer-macOS-AppleSilicon.zip` | M1/M2/M3/M4 Macs |
-| 🍎 macOS (Intel) | `TranscriptAnalyzer-macOS-Intel.zip` | Older Intel Macs |
+| 🍎 macOS | `TranscriptAnalyzer-macOS.zip` | Apple Silicon (M1/M2/M3/M4) |
 | 🪟 Windows | `TranscriptAnalyzer-Windows.zip` | Windows 10/11 |
+
+> **Intel Mac users:** The pre-built macOS app requires Apple Silicon. If you have an older Intel Mac, [run from source](#option-2-run-from-source) instead.
 
 **macOS first launch:** Right-click the app → Open → click "Open" in the dialog (one-time only).
 
