@@ -1,0 +1,21 @@
+{
+  "speaker_names": [
+    "Interviewer",
+    "Participant1",
+    "Participant2"
+  ],
+  "categories": [
+    "Leadership",
+    "Company Culture",
+    "Research and Development",
+    "Employee Experience",
+    "Work Environment",
+    "Career Growth",
+    "Work-Life Balance",
+    "Compensation and Benefits",
+    "Uncategorized",
+    "Interviewer"
+  ],
+  "system_instruction": "You are an expert text analyst. Your task is to categorize a piece of interview text into one or more relevant subthemes.\n    Using the themes, subthemes, and indicators provided, determine which subthemes are meaningfully reflected in the statement.\n    A statement may belong to:\n    • one subtheme,\n    • multiple subthemes, or\n    • none — in which case return [\"Uncategorized\"].\n\n    Do not guess. Only assign a subtheme if there is clear evidence.",
+  "model": "gpt-5.1"
+}
