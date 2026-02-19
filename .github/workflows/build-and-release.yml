@@ -1,0 +1,111 @@
+name: Build & Release
+
+# Trigger on version tags (e.g., v1.0.0, v2.1.3)
+on:
+  push:
+    tags:
+      - "v*"
+
+# Allow the workflow to create releases and upload assets
+permissions:
+  contents: write
+
+jobs:
+  # ──────────────────────────────────────
+  # Step 1: Run tests before building
+  # ──────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+  # ──────────────────────────────────────
+  # Step 2: Build for macOS and Windows
+  # ──────────────────────────────────────
+  build:
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            artifact-name: TranscriptAnalyzer-macOS
+            build-ext: app
+          - os: windows-latest
+            artifact-name: TranscriptAnalyzer-Windows
+            build-ext: exe
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build with flet pack (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          flet pack gui_app.py --name TranscriptAnalyzer --add-data "default_settings.json:."
+          cd dist && zip -r TranscriptAnalyzer-macOS.zip TranscriptAnalyzer.app
+
+      - name: Build with flet pack (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          flet pack gui_app.py --name TranscriptAnalyzer --add-data "default_settings.json;."
+          Compress-Archive -Path dist\TranscriptAnalyzer.exe -DestinationPath dist\TranscriptAnalyzer-Windows.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: dist/TranscriptAnalyzer-*.zip
+
+  # ──────────────────────────────────────
+  # Step 3: Create GitHub Release
+  # ──────────────────────────────────────
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Transcript Analyzer ${{ github.ref_name }}
+          body: |
+            ## Transcript Analyzer ${{ github.ref_name }}
+
+            ### Downloads
+            - **macOS**: `TranscriptAnalyzer-macOS.zip` — Unzip, then right-click → Open (first time only)
+            - **Windows**: `TranscriptAnalyzer-Windows.zip` — Unzip and double-click `TranscriptAnalyzer.exe`
+
+            ### Requirements
+            - An OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+
+            See the [User Guide](USER_GUIDE.md) for detailed instructions.
+          files: |
+            artifacts/**/*.zip
+          draft: false
+          prerelease: false
