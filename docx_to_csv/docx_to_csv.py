@@ -83,7 +83,21 @@ def process_docx_files(input_source, output_csv_path, log_callback=print, speake
             # Continue processing other files even if one fails
 
     if not processed_transcript_data:
-        log_callback(f"No content extracted from provided .docx files. No CSV will be created.")
+        speaker_list_str = ", ".join(SPEAKER_NAMES[:5])
+        if len(SPEAKER_NAMES) > 5:
+            speaker_list_str += f", ... ({len(SPEAKER_NAMES)} total)"
+        log_callback(
+            f"⚠️ No statements were found in your transcript(s). "
+            f"This usually means the speaker names in your Settings don't match "
+            f"the names in your documents."
+        )
+        log_callback(
+            f"   Your current speaker names: {speaker_list_str}"
+        )
+        log_callback(
+            f"   💡 To fix: Click the ⚙️ Settings icon and update the speaker names "
+            f"to match exactly how they appear in your DOCX files."
+        )
         return
 
     try:

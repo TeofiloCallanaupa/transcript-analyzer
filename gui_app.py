@@ -4,6 +4,7 @@ import sys
 import threading
 import time
 import json
+import webbrowser
 
 # Import the logic functions from our refactored scripts
 # Ensure these scripts are in the same directory or PYTHONPATH
@@ -86,7 +87,7 @@ def main(page: ft.Page):
             ft.TextButton(
                 "View OpenAI Pricing & Models →",
                 icon=ft.Icons.OPEN_IN_NEW,
-                on_click=lambda _: page.launch_url("https://platform.openai.com/docs/pricing")
+                on_click=lambda _: webbrowser.open("https://platform.openai.com/docs/pricing")
             )
         ]),
         bgcolor=ft.Colors.ORANGE_50,
@@ -97,6 +98,24 @@ def main(page: ft.Page):
     
     # File Selection Display
     files_text = ft.Text("No files selected", italic=True, color=ft.Colors.GREY_500)
+    files_chip_row = ft.Row(wrap=True, spacing=5, run_spacing=5)
+    
+    # Settings reminder (shown after files are selected)
+    settings_reminder = ft.Container(
+        content=ft.Row([
+            ft.Icon(ft.Icons.INFO_OUTLINE, color=ft.Colors.BLUE_700, size=20),
+            ft.Text(
+                "Tip: Make sure the speaker names in Settings (⚙️) match the names in your transcripts, "
+                "otherwise the app won't be able to extract any statements.",
+                size=13, color=ft.Colors.BLUE_800, expand=True
+            ),
+        ]),
+        bgcolor=ft.Colors.BLUE_50,
+        border=ft.Border.all(1, ft.Colors.BLUE_200),
+        border_radius=5,
+        padding=10,
+        visible=False,
+    )
     
     # Step status indicators
     step1_status = ft.Text("⏸ Pending", color=ft.Colors.GREY_500, weight=ft.FontWeight.BOLD)
@@ -289,20 +308,51 @@ def main(page: ft.Page):
         log_view.controls.append(ft.Text(f"[{time.strftime('%H:%M:%S')}] {msg}", size=12, font_family="monospace"))
         page.update()
 
+    def update_file_display():
+        """Refresh the file list UI (chips + text) based on selected_files."""
+        files_chip_row.controls.clear()
+        if selected_files:
+            for file_path in selected_files:
+                chip = ft.Chip(
+                    label=ft.Text(os.path.basename(file_path), size=12),
+                    delete_icon=ft.Icons.CLOSE,
+                    on_delete=lambda e, path=file_path: remove_file(path),
+                )
+                files_chip_row.controls.append(chip)
+            files_text.value = f"{len(selected_files)} file(s) selected"
+            files_text.color = ft.Colors.BLACK
+            files_text.italic = False
+            btn_convert.disabled = False
+            settings_reminder.visible = True
+        else:
+            files_text.value = "No files selected"
+            files_text.color = ft.Colors.GREY_500
+            files_text.italic = True
+            btn_convert.disabled = True
+            settings_reminder.visible = False
+        page.update()
+
+    def remove_file(path):
+        """Remove a single file from the selected list."""
+        nonlocal selected_files
+        selected_files = [f for f in selected_files if f != path]
+        log_message(f"Removed: {os.path.basename(path)}")
+        update_file_display()
+
     async def handle_pick_files(e):
         nonlocal selected_files
         files = await ft.FilePicker().pick_files(allow_multiple=True, allowed_extensions=["docx"])
         if files:
-            selected_files = [f.path for f in files]
-            files_text.value = f"Selected {len(selected_files)} file(s):\n" + "\n".join([os.path.basename(f) for f in selected_files])
-            files_text.color = ft.Colors.BLACK
-            log_message(f"Selected {len(selected_files)} files.")
-            # Enable step 1 button
-            btn_convert.disabled = False
-        else:
-            # User cancelled
-            pass
-        page.update()
+            new_paths = [f.path for f in files]
+            # Append without duplicates
+            existing = set(selected_files)
+            added = [p for p in new_paths if p not in existing]
+            selected_files.extend(added)
+            if added:
+                log_message(f"Added {len(added)} file(s). Total: {len(selected_files)}.")
+            else:
+                log_message("No new files added (already selected).")
+            update_file_display()
 
     def reveal_in_finder(path):
         """Open Finder and select the file"""
@@ -359,10 +409,13 @@ def main(page: ft.Page):
                 return
             
             if not os.path.exists(csv_output_path):
-                log_message("Error: CSV conversion failed.")
-                step1_status.value = "❌ Failed"
+                step1_status.value = "❌ No matches"
                 step1_status.color = ft.Colors.RED_700
-                show_error("CSV conversion failed. Check the activity log for details.")
+                show_error(
+                    "No statements were extracted from your files. "
+                    "This usually means the speaker names in Settings (⚙️) don't match "
+                    "the names in your transcripts. Check the Activity Log below for details."
+                )
                 return
 
             log_message(f"✓ CSV created: {csv_output_path}")
@@ -547,6 +600,8 @@ def main(page: ft.Page):
         ft.Text("1. Select Files", size=18, weight=ft.FontWeight.BOLD),
         ft.Row([btn_select], alignment=ft.MainAxisAlignment.START),
         files_text,
+        files_chip_row,
+        settings_reminder,
         
         ft.Divider(),
         
