@@ -31,19 +31,29 @@ A desktop application for converting interview transcripts from DOCX to CSV and 
 
 ## Prerequisites
 
-- macOS (for the packaged app)
+- macOS or Windows (for the packaged app)
 - Python 3.12+ (for development)
 - OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
 
+## Download
+
+> **📥 [Download the latest release](https://github.com/TeofiloCallanaupa/transcript-analyzer/releases/latest)**
+
+| Platform | File | Compatible with |
+|----------|------|-----------------|
+| 🍎 macOS (Apple Silicon) | `TranscriptAnalyzer-macOS-AppleSilicon.zip` | M1/M2/M3/M4 Macs |
+| 🍎 macOS (Intel) | `TranscriptAnalyzer-macOS-Intel.zip` | Older Intel Macs |
+| 🪟 Windows | `TranscriptAnalyzer-Windows.zip` | Windows 10/11 |
+
+**macOS first launch:** Right-click the app → Open → click "Open" in the dialog (one-time only).
+
 ## Installation
 
-### Option 1: Use Pre-built App (macOS)
+### Option 1: Use Pre-built App (Recommended)
 
-1. Download the latest release from the [Releases](../../releases) page
-2. Open `TranscriptAnalyzer.app`
-3. If macOS blocks it (first time only):
-   - Right-click → Open
-   - Click "Open" in the dialog
+1. Download the correct zip for your platform from the [Releases page](https://github.com/TeofiloCallanaupa/transcript-analyzer/releases/latest)
+2. Unzip and open the app
+3. macOS users: right-click → Open the first time (see [User Guide](USER_GUIDE.md))
 
 ### Option 2: Run from Source
 

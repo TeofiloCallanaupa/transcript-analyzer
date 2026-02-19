@@ -31,19 +31,19 @@ jobs:
         run: python -m unittest discover -s tests -v
 
   # ──────────────────────────────────────
-  # Step 2: Build for macOS and Windows
+  # Step 2: Build for macOS (Intel + ARM) and Windows
   # ──────────────────────────────────────
   build:
     needs: test
     strategy:
       matrix:
         include:
+          - os: macos-13
+            artifact-name: TranscriptAnalyzer-macOS-Intel
           - os: macos-latest
-            artifact-name: TranscriptAnalyzer-macOS
-            build-ext: app
+            artifact-name: TranscriptAnalyzer-macOS-AppleSilicon
           - os: windows-latest
             artifact-name: TranscriptAnalyzer-Windows
-            build-ext: exe
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -61,19 +61,19 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           flet pack gui_app.py --name TranscriptAnalyzer --add-data "default_settings.json:."
-          cd dist && zip -r TranscriptAnalyzer-macOS.zip TranscriptAnalyzer.app
+          cd dist && zip -r ${{ matrix.artifact-name }}.zip TranscriptAnalyzer.app
 
       - name: Build with flet pack (Windows)
         if: runner.os == 'Windows'
         run: |
           flet pack gui_app.py --name TranscriptAnalyzer --add-data "default_settings.json;."
-          Compress-Archive -Path dist\TranscriptAnalyzer.exe -DestinationPath dist\TranscriptAnalyzer-Windows.zip
+          Compress-Archive -Path dist\TranscriptAnalyzer.exe -DestinationPath dist\${{ matrix.artifact-name }}.zip
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: dist/TranscriptAnalyzer-*.zip
+          path: dist/${{ matrix.artifact-name }}.zip
 
   # ──────────────────────────────────────
   # Step 3: Create GitHub Release
@@ -98,13 +98,17 @@ jobs:
             ## Transcript Analyzer ${{ github.ref_name }}
 
             ### Downloads
-            - **macOS**: `TranscriptAnalyzer-macOS.zip` — Unzip, then right-click → Open (first time only)
-            - **Windows**: `TranscriptAnalyzer-Windows.zip` — Unzip and double-click `TranscriptAnalyzer.exe`
+
+            | Platform | File | Notes |
+            |----------|------|-------|
+            | 🍎 macOS (Apple Silicon) | `TranscriptAnalyzer-macOS-AppleSilicon.zip` | M1/M2/M3/M4 Macs |
+            | 🍎 macOS (Intel) | `TranscriptAnalyzer-macOS-Intel.zip` | Older Intel Macs |
+            | 🪟 Windows | `TranscriptAnalyzer-Windows.zip` | Windows 10/11 |
+
+            **First time on macOS?** Right-click the app → Open (see [User Guide](USER_GUIDE.md))
 
             ### Requirements
             - An OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
-
-            See the [User Guide](USER_GUIDE.md) for detailed instructions.
           files: |
             artifacts/**/*.zip
           draft: false
