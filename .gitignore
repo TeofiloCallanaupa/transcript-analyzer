@@ -50,6 +50,7 @@ dist/
 # Runtime files (default_settings.json is the tracked template)
 # ──────────────────────────────────────
 settings.json
+uploads/
 
 # ──────────────────────────────────────
 # Project housekeeping

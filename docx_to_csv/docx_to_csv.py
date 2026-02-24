@@ -4,13 +4,15 @@ import sys
 import os
 import re
 
-def process_docx_files(input_source, output_csv_path, log_callback=print, speaker_list=None):
+def process_docx_files(input_source, output_csv_path, log_callback=print, speaker_list=None, progress_callback=None, file_callback=None):
     """
     Processes all .docx files in a given folder OR a list of specific files, extracts interview transcripts,
     and combines them into a single .csv file with 'name', 'timestamp', 'statement' columns.
 
     input_source: Can be a string (folder path) or a list of strings (file paths).
     speaker_list: Optional list of speaker names to identify. If None, defaults to generic or empty.
+    progress_callback: Optional callable(processed_paragraphs, total_paragraphs) for progress reporting.
+    file_callback: Optional callable(file_index, total_files, filename) called when each file starts.
     """
     
     if speaker_list:
@@ -47,7 +49,24 @@ def process_docx_files(input_source, output_csv_path, log_callback=print, speake
 
     processed_transcript_data = []
 
-    for docx_path in docx_files:
+    # Count total lines upfront for progress reporting.
+    # Lines, not paragraphs — some DOCX files use soft breaks (shift+enter)
+    # which put all content in a single paragraph.
+    total_lines = 0
+    if progress_callback:
+        for docx_path in docx_files:
+            try:
+                doc = docx.Document(docx_path)
+                for p in doc.paragraphs:
+                    total_lines += len(p.text.split('\n'))
+            except Exception:
+                pass  # Will be handled in the main loop
+    
+    lines_done = 0
+
+    for file_idx, docx_path in enumerate(docx_files):
+        if file_callback:
+            file_callback(file_idx + 1, len(docx_files), os.path.basename(docx_path))
         log_callback(f"Processing '{docx_path}'...")
         try:
             document = docx.Document(docx_path)
@@ -61,6 +80,11 @@ def process_docx_files(input_source, output_csv_path, log_callback=print, speake
                 lines = paragraph.text.split('\n')
                 for line in lines:
                     text = line.strip()
+                    
+                    lines_done += 1
+                    if progress_callback and total_lines > 0:
+                        progress_callback(lines_done, total_lines)
+                    
                     if not text:
                         continue
 
