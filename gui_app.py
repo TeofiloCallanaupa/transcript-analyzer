@@ -3,6 +3,8 @@ import os
 import sys
 import time
 import json
+import platform
+import subprocess
 import tempfile
 import shutil
 
@@ -163,8 +165,9 @@ def main(page: ft.Page):
     
     # CSV result display
     csv_path_text = ft.Text("", selectable=True, size=12)
+    _file_manager_label = "Show in Explorer" if platform.system() == "Windows" else "Open in Finder"
     btn_open_csv_finder = ft.Button(
-        "Open in Finder",
+        _file_manager_label,
         icon=ft.Icons.FOLDER_OPEN,
         on_click=lambda _: reveal_in_finder(csv_output_path) if csv_output_path else None,
         visible=not is_web  # Hide on web — no local filesystem access
@@ -185,7 +188,7 @@ def main(page: ft.Page):
     # Final result display
     final_path_text = ft.Text("", selectable=True, size=12)
     btn_open_final_finder = ft.Button(
-        "Open in Finder",
+        _file_manager_label,
         icon=ft.Icons.FOLDER_OPEN,
         on_click=lambda _: reveal_in_finder(csv_output_path) if csv_output_path else None,
         visible=not is_web  # Hide on web — no local filesystem access
@@ -453,6 +456,12 @@ def main(page: ft.Page):
         nonlocal selected_files
         selected_files = [f for f in selected_files if f != path]
         log_message(f"Removed: {os.path.basename(path)}")
+        # Remove only the validation warning/error for this specific file
+        validation_results_column.controls = [
+            c for c in validation_results_column.controls
+            if getattr(c, 'data', None) != path
+        ]
+        validation_results_column.visible = len(validation_results_column.controls) > 0
         update_file_display()
 
     # --- File Picker (service — does not need to be added to UI) ---
@@ -575,6 +584,7 @@ def main(page: ft.Page):
                         border=ft.Border.all(1, ft.Colors.RED_200),
                         border_radius=6,
                         padding=10,
+                        data=file_path,  # Tag with file path for per-file removal
                     )
                 )
             else:
@@ -599,6 +609,7 @@ def main(page: ft.Page):
                             border=ft.Border.all(1, ft.Colors.ORANGE_200),
                             border_radius=6,
                             padding=10,
+                            data=file_path,  # Tag with file path for per-file removal
                         )
                     )
                 else:
@@ -616,11 +627,22 @@ def main(page: ft.Page):
         update_file_display()
 
     def reveal_in_finder(path):
-        """Open Finder and select the file (desktop only)."""
+        """Open the native file manager and select the file (desktop only)."""
         if is_web:
             return
-        import subprocess
-        subprocess.run(["open", "-R", path])
+        try:
+            system = platform.system()
+            if system == "Darwin":  # macOS
+                subprocess.run(["open", "-R", path])
+            elif system == "Windows":
+                # Normalize path separators for Windows Explorer
+                path = os.path.normpath(path)
+                subprocess.run(["explorer", "/select,", path])
+            else:  # Linux and others
+                # xdg-open opens the containing folder
+                subprocess.run(["xdg-open", os.path.dirname(path)])
+        except Exception as e:
+            log_message(f"Could not open file manager: {e}")
 
     def convert_to_csv(e):
         nonlocal processing, csv_output_path, cancel_requested
