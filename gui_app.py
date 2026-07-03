@@ -252,6 +252,71 @@ def main(page: ft.Page):
         page.pop_dialog()
         page.update()
 
+    def revalidate_all_files():
+        nonlocal selected_files
+        
+        # Gather all unique file paths currently in play
+        all_paths = list(selected_files)
+        for control in validation_results_column.controls:
+            if hasattr(control, 'data') and control.data and control.data not in all_paths:
+                all_paths.append(control.data)
+                
+        if not all_paths:
+            return
+            
+        selected_files = []
+        validation_results_column.controls.clear()
+        
+        speakers = settings_manager.get_speaker_names()
+        accepted = []
+        
+        for file_path in all_paths:
+            result = validate_docx_file(file_path, speaker_list=speakers)
+            basename = os.path.basename(file_path)
+            
+            if not result.is_valid:
+                error_detail = "\n".join(f"• {err}" for err in result.errors)
+                validation_results_column.controls.append(
+                    ft.Container(
+                        content=ft.Row([
+                            ft.Icon(ft.Icons.ERROR_OUTLINE, color=ft.Colors.RED_700, size=18),
+                            ft.Column(controls=[
+                                ft.Text(f"{basename}", weight=ft.FontWeight.BOLD, color=ft.Colors.RED_800, size=13),
+                                ft.Text(error_detail, size=12, color=ft.Colors.RED_700),
+                            ], spacing=2, expand=True),
+                        ], spacing=10),
+                        bgcolor=ft.Colors.RED_50,
+                        border=ft.Border.all(1, ft.Colors.RED_200),
+                        border_radius=6,
+                        padding=10,
+                        data=file_path,
+                    )
+                )
+            else:
+                accepted.append(file_path)
+                if result.warnings:
+                    warning_detail = "\n".join(f"• {warn}" for warn in result.warnings)
+                    validation_results_column.controls.append(
+                        ft.Container(
+                            content=ft.Row([
+                                ft.Icon(ft.Icons.WARNING_AMBER, color=ft.Colors.ORANGE_700, size=18),
+                                ft.Column(controls=[
+                                    ft.Text(f"{basename} — added with warnings", weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_800, size=13),
+                                    ft.Text(warning_detail, size=12, color=ft.Colors.ORANGE_700),
+                                ], spacing=2, expand=True),
+                            ], spacing=10),
+                            bgcolor=ft.Colors.ORANGE_50,
+                            border=ft.Border.all(1, ft.Colors.ORANGE_200),
+                            border_radius=6,
+                            padding=10,
+                            data=file_path,
+                        )
+                    )
+                    
+        selected_files.extend(accepted)
+        validation_results_column.visible = len(validation_results_column.controls) > 0
+        update_file_display()
+
     def save_settings_submit(e):
         # Parse inputs
         speakers = [s.strip() for s in speaker_input.value.split('\n') if s.strip()]
@@ -259,13 +324,17 @@ def main(page: ft.Page):
         instruction = instruction_input.value.strip()
         
         # Save
-        new_settings = settings_manager.get_settings()
+        new_settings = settings_manager.get_settings().copy()
         new_settings["speaker_names"] = speakers
         new_settings["categories"] = categories
         new_settings["system_instruction"] = instruction
         settings_manager.save_settings(new_settings)
         
-        log_message("Settings updated.")
+        log_message(f"Settings updated. Speakers: {', '.join(speakers)}.")
+        
+        # Re-validate all files using the new settings/speakers
+        revalidate_all_files()
+        
         page.pop_dialog()
         page.update()
 

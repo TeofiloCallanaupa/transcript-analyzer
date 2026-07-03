@@ -1,11 +1,22 @@
 import json
 import os
 import shutil
+import sys
 
 class SettingsManager:
     def __init__(self, settings_file="settings.json", default_settings_file="default_settings.json"):
-        self.settings_file = settings_file
-        self.default_settings_file = default_settings_file
+        # Resolve paths correctly for running from source vs compiled executable (PyInstaller)
+        if getattr(sys, 'frozen', False):
+            # Running as compiled bundle
+            executable_dir = os.path.dirname(sys.executable)
+            bundle_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        else:
+            # Running from source
+            executable_dir = os.path.dirname(os.path.abspath(__file__))
+            bundle_dir = executable_dir
+
+        self.settings_file = os.path.join(executable_dir, settings_file) if settings_file else None
+        self.default_settings_file = os.path.join(bundle_dir, default_settings_file) if default_settings_file else None
         self.settings = {}
         self._load_or_create_settings()
 

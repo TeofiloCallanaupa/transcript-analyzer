@@ -112,7 +112,7 @@ def validate_docx_file(file_path: str, speaker_list: list[str] | None = None) ->
     # --- Check 4: Speaker name matching ---
     if speaker_list:
         speaker_pattern = re.compile(
-            r"^\s*(" + "|".join(re.escape(name) for name in speaker_list) + r")(?:(?:\s+((\d{1,2}:)?\d{2}:\d{2})\s*(.*))|(?:\s*$))"
+            r"^\s*(" + "|".join(re.escape(name) for name in speaker_list) + r")(?:(?:\s+((\d{1,2}:)?\d{1,2}:\d{2})\s*(.*))|(?:\s*$))"
         )
         has_speaker_match = any(speaker_pattern.match(line) for line in all_text_lines)
 

@@ -29,7 +29,7 @@ def process_docx_files(input_source, output_csv_path, log_callback=print, speake
     # 1. The name is followed by a timestamp (and optional statement).
     # 2. OR The name is followed by the end of the line (indicating a missing timestamp).
     speaker_pattern = re.compile(
-        r"^\s*(" + "|".join(re.escape(name) for name in SPEAKER_NAMES) + r")(?:(?:\s+((\d{1,2}:)?\d{2}:\d{2})\s*(.*))|(?:\s*$))"
+        r"^\s*(" + "|".join(re.escape(name) for name in SPEAKER_NAMES) + r")(?:(?:\s+((\d{1,2}:)?\d{1,2}:\d{2})\s*(.*))|(?:\s*$))"
     )
 
     docx_files = []
